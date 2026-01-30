@@ -107,16 +107,34 @@ async def ucp_search(
     UCP-compatible product search endpoint.
     
     Maps UCP search request to MCP search_products tool.
+    When the backend asks a follow-up question (interview), response status is "error"
+    with the question in error/details (details.response_type == "question").
+    To get products in one call for "laptop"/"books", pass filters, e.g.:
+      filters: {"category": "Electronics", "use_case": "Work"} or {"category": "Books"}.
     """
+    filters = request.parameters.filters or {}
+    # If UCP caller sends no filters and query is just category-like, add defaults
+    # so a single "laptop" or "books" call returns products (skip interview).
+    query = (request.parameters.query or "").strip().lower()
+    if not filters and query in ("laptop", "laptops", "electronics", "books", "book"):
+        if query in ("books", "book"):
+            filters = {"category": "Books"}
+        else:
+            # Backend needs use_case + budget (+ brand) to skip interview; add use_case + budget
+            filters = {
+                "category": "Electronics",
+                "use_case": "Work",
+                "price_max_cents": 300000,  # $3000 so we have budget; brand still asked unless passed
+            }
     # Convert UCP request to MCP format
     mcp_request = SearchProductsRequest(
         query=request.parameters.query,
-        filters=request.parameters.filters or {},
+        filters=filters,
         limit=request.parameters.limit or 10
     )
     
-    # Call MCP search_products
-    mcp_response = search_products(mcp_request, db)
+    # Call MCP search_products (async — must await)
+    mcp_response = await search_products(mcp_request, db)
     
     # Convert MCP response to UCP format
     ucp_status = mcp_status_to_ucp(mcp_response.status)
