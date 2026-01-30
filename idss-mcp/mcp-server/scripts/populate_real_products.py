@@ -397,8 +397,10 @@ def populate_database(products: List[Dict[str, Any]], clear_existing: bool = Fal
             source = product.get("source") or "Seed"
             source_product_id = product.get("source_product_id")
             if source and source_product_id:
+                # Include index so multiple products from same page (e.g. Temu category) get distinct IDs
+                unique_key = f"{source_product_id}|{idx}"
                 product_id = stable_product_id_for_source(
-                    source, source_product_id, product.get("category", "Electronics")
+                    source, unique_key, product.get("category", "Electronics")
                 )
             else:
                 product_id = generate_product_id(
@@ -631,7 +633,8 @@ def main():
         if args.scrape_only:
             print("--scrape-only requires --scrape --urls <...> or --scrape-macs")
             sys.exit(1)
-        products = REAL_PRODUCTS
+        # Include REAL_MACS so "black mac laptop" finds Midnight/Space Black MacBooks
+        products = REAL_PRODUCTS + REAL_MACS
         if args.count:
             products = products[: args.count]
         print("=" * 60)
