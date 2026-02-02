@@ -39,20 +39,23 @@ class KnowledgeGraphService:
     Per week4notes.txt: KG supports verification, reasoning, and complex queries.
     """
     
-    def __init__(self, uri: str = "bolt://localhost:7687", user: str = "neo4j", password: str = "password"):
+    def __init__(self, uri: str = "bolt://localhost:7687", user: str = "neo4j", password: Optional[str] = None):
         """
         Initialize Neo4j connection.
         
         Args:
-            uri: Neo4j bolt URI
-            user: Neo4j username
-            password: Neo4j password
+            uri: Neo4j bolt URI (or set NEO4J_URI env).
+            user: Neo4j user (or set NEO4J_USER env).
+            password: Neo4j password — set via NEO4J_PASSWORD env only; do not hardcode.
         """
         if not NEO4J_AVAILABLE:
             self.driver = None
             logger.warning("Neo4j not available - KG features disabled")
             return
-        
+        if not password or not password.strip():
+            self.driver = None
+            logger.warning("NEO4J_PASSWORD not set - KG disabled. Set in .env (do not commit .env).")
+            return
         try:
             self.driver = GraphDatabase.driver(uri, auth=(user, password))
             # Test connection
@@ -358,8 +361,7 @@ def get_kg_service() -> KnowledgeGraphService:
         import os
         neo4j_uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
         neo4j_user = os.getenv("NEO4J_USER", "neo4j")
-        neo4j_password = os.getenv("NEO4J_PASSWORD", "password")
-        
+        neo4j_password = os.getenv("NEO4J_PASSWORD")  # No default — set in .env, do not commit
         _kg_service = KnowledgeGraphService(uri=neo4j_uri, user=neo4j_user, password=neo4j_password)
     
     return _kg_service

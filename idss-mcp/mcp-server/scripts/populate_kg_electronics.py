@@ -165,8 +165,10 @@ def main():
     # Initialize KG service
     neo4j_uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
     neo4j_user = os.getenv("NEO4J_USER", "neo4j")
-    neo4j_password = os.getenv("NEO4J_PASSWORD", "password")
-    
+    neo4j_password = os.getenv("NEO4J_PASSWORD")
+    if not neo4j_password:
+        logger.error("NEO4J_PASSWORD not set. Set it in .env (do not commit .env to git).")
+        return
     kg_service = KnowledgeGraphService(uri=neo4j_uri, user=neo4j_user, password=neo4j_password)
     
     if not kg_service.is_available():
