@@ -114,3 +114,8 @@ secrets.yaml
 credentials.json
 
 .claude/
+
+# idss-mcp: frontend removed; backend-only (mcp-server). Do not commit Next.js artifacts.
+idss-mcp/node_modules/
+idss-mcp/.next/
+idss-mcp/.git.bak/
