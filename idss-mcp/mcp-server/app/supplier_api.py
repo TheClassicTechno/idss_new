@@ -12,8 +12,9 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-import uuid
 import logging
+import os
+import uuid
 
 from app.database import get_db
 from app.models import Product, Price, Inventory, Order
@@ -71,11 +72,12 @@ class SupplierProductResponse(BaseModel):
 
 def verify_supplier_api_key(api_key: Optional[str] = Header(None, alias="X-Supplier-API-Key")):
     """
-    Verify supplier API key.
-    
-    In production, use proper authentication (OAuth, JWT, etc.)
+    Verify supplier API key from environment (SUPPLIER_API_KEY).
+    Do not hardcode; set in .env and do not commit .env.
     """
-    expected_key = "supplier_api_key_placeholder"  # Should come from config/env
+    expected_key = os.getenv("SUPPLIER_API_KEY")
+    if not expected_key or not expected_key.strip():
+        raise HTTPException(status_code=503, detail="Supplier API key not configured (set SUPPLIER_API_KEY in .env)")
     if api_key != expected_key:
         raise HTTPException(status_code=401, detail="Invalid supplier API key")
     return api_key
